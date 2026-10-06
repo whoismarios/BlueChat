@@ -1,6 +1,14 @@
 "use client";
 
-import type { AppSettings, ChatSettings, ConversationSummary, HealthStatus, UploadedFile } from "@/lib/types";
+import type {
+  AppSettings,
+  ChatSettings,
+  ConversationSummary,
+  ExecuteCodeRequest,
+  HealthStatus,
+  PythonToolOutput,
+  UploadedFile,
+} from "@/lib/types";
 
 async function readError(res: Response): Promise<string> {
   try {
@@ -120,4 +128,12 @@ export async function transcribeAudio(blob: Blob, signal?: AbortSignal): Promise
   form.append("audio", blob, `aufnahme.${ext}`);
   const data = await apiFetch<{ text: string }>("/api/transcribe", { method: "POST", body: form, signal });
   return data?.text ?? "";
+}
+
+/* Edited code cells -------------------------------------------------- */
+
+/** Run user-edited code in the session's kernel → output of that run. */
+export function executeCode(sessionId: string, code: string, signal?: AbortSignal) {
+  const body: ExecuteCodeRequest = { code };
+  return apiFetch<PythonToolOutput>(`/api/sandbox/${sessionId}/execute`, { method: "POST", body: JSON.stringify(body), signal });
 }
