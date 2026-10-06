@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="300" viewBox="0 0 1280 300">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#00152a"/>
+      <stop offset="1" stop-color="#00213f"/>
+    </linearGradient>
+    <linearGradient id="logo" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0a74c4"/>
+      <stop offset="1" stop-color="#004b93"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.82" cy="0.15" r="0.6">
+      <stop offset="0" stop-color="#00a3e0" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#00a3e0" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="32" height="32" patternUnits="userSpaceOnUse">
+      <path d="M32 0H0V32" fill="none" stroke="#ffffff" stroke-opacity="0.035"/>
+    </pattern>
+  </defs>
+
+  <rect width="1280" height="300" rx="20" fill="url(#bg)"/>
+  <rect width="1280" height="300" rx="20" fill="url(#grid)"/>
+  <rect width="1280" height="300" rx="20" fill="url(#glow)"/>
+
+  <!-- Logo (wie app/icon.svg) -->
+  <g transform="translate(470 78) scale(3.2)">
+    <rect x="1" y="1" width="30" height="30" rx="8" fill="url(#logo)"/>
+    <path d="M10.5 7.5v16" stroke="#fff" stroke-width="2.6" stroke-linecap="round"/>
+    <circle cx="16.25" cy="18" r="5.6" fill="none" stroke="#fff" stroke-width="2.6"/>
+    <circle cx="23.6" cy="8.6" r="2.1" fill="#00a3e0"/>
+  </g>
+
+  <!-- Wortmarke -->
+  <text x="590" y="160" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="72" font-weight="600" fill="#ffffff" letter-spacing="-1">blue<tspan
+        font-family="Georgia, 'Times New Roman', serif" font-style="italic" font-weight="400">Chat</tspan></text>
+
+  <text x="640" y="232" text-anchor="middle"
+        font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif"
+        font-size="22" fill="#9fc3e6">Chat mit Python-Kernel · interaktive Regler · Dashboard</text>
+
+  <!-- Akzentlinie -->
+  <rect x="560" y="258" width="160" height="3" rx="1.5" fill="#00a3e0" opacity="0.8"/>
+</svg>
