@@ -1,0 +1,26 @@
+# Pinned to the versions verified together in this image (python:3.12-slim).
+# --- service ---
+fastapi==0.142.2
+uvicorn[standard]==0.54.0
+python-multipart==0.0.32
+jupyter_client==8.10.0
+ipykernel==7.4.0
+# --- data science stack available to user code ---
+matplotlib-inline==0.2.2
+numpy==2.5.3
+pandas==3.0.6
+matplotlib==3.11.2
+seaborn==0.13.2
+scipy==1.18.1
+scikit-learn==1.9.1
+statsmodels==0.15.0
+plotly==7.1.0
+nbformat==5.11.1  # required by plotly's mimetype renderer
+sympy==1.14.0
+openpyxl==3.1.5
+xlrd==2.0.2
+pyarrow==25.0.1
+tabulate==0.10.0
+jinja2==3.1.6  # pandas Styler (df.style)
+pillow==12.3.0
+requests==2.34.2
