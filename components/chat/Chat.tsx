@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type RefObject } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type RefObject } from "react";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
 import type { BlueChatUIMessage, ChatRequestBody, ChatSettings } from "@/lib/types";
@@ -9,6 +9,9 @@ import { useConversations } from "@/lib/client/conversations";
 import { useToast } from "@/components/ui";
 import { MessageList } from "@/components/messages/MessageList";
 import { ConversationIdProvider } from "@/components/messages/ConversationContext";
+import { DashboardPanel } from "@/components/dashboard/DashboardPanel";
+import { collectDashboard } from "@/components/dashboard/collect";
+import { useDashboardPanel, usePanelWidth } from "@/components/dashboard/useDashboardPanel";
 import { ChatHeader } from "./ChatHeader";
 import { Composer, type Attachment, type ComposerHandle } from "./Composer";
 import { EmptyState, type Suggestion } from "./EmptyState";
@@ -187,6 +190,13 @@ export function Chat({ id, initialMessages, initialSettings, persisted: initiall
   const title = summary?.title || initialTitle || "Neuer Chat";
   const hasMessages = messages.length > 0;
 
+  /* ---------------- dashboard ---------------- */
+  const dashboardData = useMemo(() => collectDashboard(messages), [messages]);
+  const dashboard = useDashboardPanel(messages, busy, dashboardData.count > 0);
+  const [panelWidth, setPanelWidth] = usePanelWidth();
+  const setDashboardOpen = dashboard.setOpen;
+  const closeDashboard = useCallback(() => setDashboardOpen(false), [setDashboardOpen]);
+
   useEffect(() => {
     document.title = hasMessages && title !== "Neuer Chat" ? `${title} · blueChat` : "blueChat";
   }, [title, hasMessages]);
@@ -201,7 +211,14 @@ export function Chat({ id, initialMessages, initialSettings, persisted: initiall
         persisted={persisted}
         hasMessages={hasMessages}
         busy={busy}
+        dashboard={
+          hasMessages
+            ? { open: dashboard.open, count: dashboardData.count, onToggle: () => setDashboardOpen(!dashboard.open) }
+            : undefined
+        }
       />
+      <div className="flex min-h-0 flex-1">
+      <div className="flex min-w-0 flex-1 flex-col">
       <div className="relative flex min-h-0 flex-1 flex-col">
         {hasMessages ? (
           <MessageList
@@ -231,6 +248,18 @@ export function Chat({ id, initialMessages, initialSettings, persisted: initiall
         <p className="mt-2 text-center text-[11px] text-ink-faint">
           blueChat kann Fehler machen. Code läuft isoliert in einer Python-Sandbox.
         </p>
+      </div>
+      </div>
+      <DashboardPanel
+        open={dashboard.open}
+        onClose={closeDashboard}
+        groups={dashboardData.groups}
+        count={dashboardData.count}
+        wide={dashboard.wide}
+        width={panelWidth}
+        onWidthChange={setPanelWidth}
+        streaming={busy}
+      />
       </div>
     </div>
     </ConversationIdProvider>

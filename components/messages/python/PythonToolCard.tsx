@@ -1,8 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChevronDown, CircleAlert, CircleCheck, Clock, Download, FileSpreadsheet, SquareTerminal } from "lucide-react";
-import type { DataExport } from "@/lib/types";
+import { useEffect, useRef, useState, type KeyboardEvent } from "react";
+import { ChevronDown, CircleAlert, CircleCheck, Clock, Download, FileSpreadsheet, Pencil, Play, SquareTerminal, Undo2 } from "lucide-react";
+import type { DataExport, PythonToolOutput } from "@/lib/types";
+import { executeCode } from "@/lib/client/api";
+import { Button } from "@/components/ui/Button";
+import { IconButton } from "@/components/ui/IconButton";
+import { useConversationId } from "../ConversationContext";
 import { DropdownMenu, type DropdownMenuEntry } from "@/components/ui/DropdownMenu";
 import { describeExport, exportDownloadUrl, triggerDownload } from "../csv";
 import { cn } from "@/lib/utils";
@@ -57,18 +61,59 @@ interface PythonToolCardProps {
 
 /** The code-interpreter cell: header, collapsible live code, rich outputs. */
 export function PythonToolCard({ part, index }: PythonToolCardProps) {
-  const phase = phaseOf(part);
+  const sessionId = useConversationId();
+  /** Result of a user edit + re-run (local only – the stored message keeps the model's code). */
+  const [edited, setEdited] = useState<{ code: string; output: PythonToolOutput } | null>(null);
+  const [draft, setDraft] = useState<string | null>(null);
+  const [rerunning, setRerunning] = useState(false);
+  const [rerunError, setRerunError] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => () => abortRef.current?.abort(), []);
+
+  const modelPhase = phaseOf(part);
+  const modelBusy = modelPhase === "writing" || modelPhase === "running";
+  const phase: Phase = rerunning
+    ? "running"
+    : edited
+      ? edited.output.status === "timeout"
+        ? "timeout"
+        : edited.output.status === "error"
+          ? "error"
+          : "ok"
+      : modelPhase;
   const busy = phase === "writing" || phase === "running";
-  const code = part.input?.code ?? "";
+  const code = edited?.code ?? part.input?.code ?? "";
   const title = part.input?.title?.trim() || (busy ? "Python-Code" : "Python ausgeführt");
-  const output = part.state === "output-available" ? part.output : undefined;
+  const output = rerunning ? undefined : edited ? edited.output : part.state === "output-available" ? part.output : undefined;
+  const editing = draft !== null;
+  const canEdit = !!sessionId && !modelBusy && !rerunning && !!code;
+
+  const run = async () => {
+    if (!sessionId || draft === null || !draft.trim()) return;
+    const next = draft;
+    abortRef.current?.abort();
+    const ctrl = new AbortController();
+    abortRef.current = ctrl;
+    setRerunning(true);
+    setRerunError(null);
+    try {
+      const result = await executeCode(sessionId, next, ctrl.signal);
+      setEdited({ code: next, output: result });
+      setDraft(null);
+    } catch (e) {
+      if (ctrl.signal.aborted) return;
+      setRerunError(e instanceof Error ? e.message : "Die Ausführung ist fehlgeschlagen.");
+    } finally {
+      if (abortRef.current === ctrl) setRerunning(false);
+    }
+  };
   const visual = hasVisualOutput(output?.outputs);
   const exports = collectExports(output?.outputs);
 
   // Code: open while running; once finished collapsed if there are visual outputs.
   const defaultOpen = busy || !visual;
   const [userOpen, setUserOpen] = useState<boolean | null>(null);
-  const codeOpen = userOpen ?? defaultOpen;
+  const codeOpen = editing || (userOpen ?? defaultOpen);
 
   const elapsed = useElapsed(phase === "running");
   const lineCount = code ? code.replace(/\n$/, "").split("\n").length : 0;
@@ -104,6 +149,7 @@ export function PythonToolCard({ part, index }: PythonToolCardProps) {
           <p className="mt-0.5 font-mono text-[10.5px] uppercase tracking-[0.1em] text-ink-faint">
             Python · Zelle {index}
             {lineCount > 0 && <> · {lineCount} {lineCount === 1 ? "Zeile" : "Zeilen"}</>}
+            {edited && <> · bearbeitet</>}
           </p>
         </div>
         <div className="ml-auto flex shrink-0 items-center gap-2">
@@ -123,11 +169,29 @@ export function PythonToolCard({ part, index }: PythonToolCardProps) {
             {phase === "writing" ? <ShimmerText className="text-xs">Schreibt Code…</ShimmerText> : codeOpen ? "Code ausblenden" : "Code anzeigen"}
           </span>
         }
-        aside={code ? <CopyButton text={code} label="Code kopieren" className="mr-2" /> : null}
+        aside={
+          code ? (
+            <span className="mr-2 flex items-center gap-0.5">
+              {edited && !editing && (
+                <IconButton label="Originalcode wiederherstellen" size="sm" disabled={rerunning} onClick={() => setEdited(null)}>
+                  <Undo2 />
+                </IconButton>
+              )}
+              {canEdit && !editing && (
+                <IconButton label="Code bearbeiten" size="sm" onClick={() => { setDraft(code); setRerunError(null); }}>
+                  <Pencil />
+                </IconButton>
+              )}
+              <CopyButton text={draft ?? code} label="Code kopieren" />
+            </span>
+          ) : null
+        }
       >
         <div className="px-2 pb-2">
           <div className="overflow-hidden rounded-[10px] bg-code-bg">
-            {code ? (
+            {draft !== null ? (
+              <CodeEditor value={draft} onChange={setDraft} onRun={() => void run()} onCancel={() => setDraft(null)} disabled={rerunning} />
+            ) : code ? (
               <PythonCode code={code} streaming={phase === "writing"} className="max-h-[440px] overflow-y-auto" />
             ) : (
               <div className="px-4 py-3 font-mono text-[12.5px] text-code-ink/40">
@@ -135,6 +199,19 @@ export function PythonToolCard({ part, index }: PythonToolCardProps) {
               </div>
             )}
           </div>
+          {draft !== null && (
+            <div className="mt-2 flex flex-wrap items-center gap-2 px-1">
+              <Button size="sm" variant="primary" onClick={() => void run()} loading={rerunning} disabled={!draft.trim()}>
+                <Play />
+                Ausführen
+              </Button>
+              <Button size="sm" variant="ghost" onClick={() => setDraft(null)} disabled={rerunning}>
+                Abbrechen
+              </Button>
+              <span className="ml-auto hidden font-mono text-[10.5px] text-ink-faint sm:inline">Strg/⌘ + Enter ausführen · Esc abbrechen</span>
+            </div>
+          )}
+          {rerunError && <p className="mt-2 px-1 text-xs text-danger">{rerunError}</p>}
         </div>
       </CollapsibleSection>
 
@@ -152,7 +229,7 @@ export function PythonToolCard({ part, index }: PythonToolCardProps) {
       {output && !busy && output.outputs.length === 0 && output.files.length === 0 && (
         <p className="border-t border-line px-4 py-2.5 font-mono text-[11px] text-ink-faint">Keine Ausgabe</p>
       )}
-      {part.state === "output-error" && (
+      {!edited && !rerunning && part.state === "output-error" && (
         <div className="border-t border-line">
           <ToolErrorText text={part.errorText || "Die Ausführung ist fehlgeschlagen."} />
         </div>
@@ -161,6 +238,62 @@ export function PythonToolCard({ part, index }: PythonToolCardProps) {
         <p className="border-t border-line px-4 py-2.5 text-xs text-ink-muted">Ausführung wurde abgelehnt.</p>
       )}
     </section>
+  );
+}
+
+/** Plain monospace editor for a cell (Tab indents, Ctrl/⌘+Enter runs, Esc cancels). */
+function CodeEditor({
+  value,
+  onChange,
+  onRun,
+  onCancel,
+  disabled,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  onRun: () => void;
+  onCancel: () => void;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.focus();
+    el.setSelectionRange(el.value.length, el.value.length);
+  }, []);
+  const rows = Math.min(24, Math.max(4, value.split("\n").length + 1));
+
+  const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      onRun();
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      onCancel();
+    } else if (e.key === "Tab" && !e.shiftKey) {
+      e.preventDefault();
+      const el = e.currentTarget;
+      const { selectionStart: start, selectionEnd: end } = el;
+      onChange(value.slice(0, start) + "    " + value.slice(end));
+      requestAnimationFrame(() => el.setSelectionRange(start + 4, start + 4));
+    }
+  };
+
+  return (
+    <textarea
+      ref={ref}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      onKeyDown={onKeyDown}
+      disabled={disabled}
+      rows={rows}
+      spellCheck={false}
+      autoCapitalize="off"
+      autoCorrect="off"
+      aria-label="Python-Code bearbeiten"
+      className="scrollbar-thin block max-h-[440px] w-full resize-y bg-code-bg px-4 py-3 font-mono text-[12.5px] leading-[1.7] text-code-ink outline-none disabled:opacity-60"
+    />
   );
 }
 

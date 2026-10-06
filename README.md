@@ -42,6 +42,11 @@ npm run dev
   - **CSV-Export:** Die Daten hinter jeder Tabelle und jedem Diagramm lassen sich als CSV herunterladen. Das geht auch für Markdown-Tabellen in Antworten.
   - **Websuche:** OpenAI-Websuche mit Quellenangaben
 - **Datei-Upload** (Büroklammer, Drag & Drop): Dateien landen im Arbeitsverzeichnis des Chats und können direkt mit pandas gelesen werden
+- **Analyse-Modus & Dashboard:** Bei Datei-Analysen veröffentlicht das Modell einen Arbeitsplan mit Häkchen; alle Diagramme, Tabellen und Widgets erscheinen zusätzlich im **Dashboard-Panel** rechts (Raster-/Listenansicht, Breite verstellbar)
+- **Interaktive Regler:** Simulationen können Regler anbieten – Verschieben rechnet den Code im Kernel sofort neu, ohne neue Chat-Nachricht
+- **Code bearbeiten:** Code jeder Python-Zelle direkt in der Karte ändern und neu ausführen (Strg/⌘ + Enter)
+- **Spracheingabe** per Mikrofon (OpenAI-Transkription)
+- **Export als Jupyter-Notebook** (`.ipynb`) über das Menü oben rechts
 - **Kernel zurücksetzen** über das Menü oben rechts im Chat
 - Hell/Dunkel-Modus
 
