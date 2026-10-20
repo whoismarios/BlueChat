@@ -17,11 +17,25 @@
 </p>
 
 <p align="center">
+  <a href="#-quickstart">Quickstart</a> ·
   <a href="#-schnellstart">Schnellstart</a> ·
   <a href="#-funktionen">Funktionen</a> ·
   <a href="#-interaktive-regler">Regler</a> ·
   <a href="#-analyse-modus--dashboard">Dashboard</a> ·
   <a href="#-projektstruktur">Struktur</a>
+</p>
+
+<br>
+
+## ⚡ Quickstart
+
+```bash
+cp .env.example .env        # dann OPENAI_API_KEY=sk-... eintragen
+docker compose up -d
+```
+
+<p align="center">
+  Öffnen: <b>http://localhost:3000</b>
 </p>
 
 <br>
@@ -47,23 +61,51 @@
 OPENAI_API_KEY=sk-...
 ```
 
-**2.** Alles starten (DB, Python-Sandbox und Next.js im Dev-Modus):
+**2.** Starten, je nach Zweck:
+
+<table>
+  <tr>
+    <th width="50%">Alles in Docker<br><sub>für Demo und andere Rechner</sub></th>
+    <th width="50%">Infrastruktur in Docker, Frontend lokal<br><sub>für die Entwicklung (schnelles Hot Reload)</sub></th>
+  </tr>
+  <tr>
+    <td valign="top">
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
-**3.** Öffnen: **http://localhost:3000**
-
-<details>
-<summary><b>Alternative:</b> Frontend lokal, Infrastruktur in Docker</summary>
-<br>
+</td>
+    <td valign="top">
 
 ```bash
 docker compose up -d db sandbox
 npm install
 npm run dev
 ```
+
+</td>
+  </tr>
+</table>
+
+Beim ersten Start wird das Sandbox-Image gebaut. Das dauert einige Minuten.
+
+**3.** Öffnen: **http://localhost:3000**
+
+Unter http://localhost:3000/api/health sollte `{"db":true,"sandbox":true,"openaiKey":true}` stehen.
+
+<details>
+<summary><b>Nützliche Befehle</b></summary>
+<br>
+
+```bash
+docker compose ps          # Status der Container
+docker compose logs -f web # Logs des Frontends (bzw. db, sandbox)
+docker compose down        # alles stoppen
+docker compose down -v     # stoppen und Daten löschen
+```
+
+Meldet das Frontend `ECONNREFUSED …:5432`, läuft die Datenbank nicht. Dann `docker compose up -d db sandbox` ausführen oder prüfen, ob Port 5432 durch ein lokales Postgres belegt ist (`lsof -i :5432`).
 
 </details>
 
