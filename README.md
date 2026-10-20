@@ -17,11 +17,25 @@
 </p>
 
 <p align="center">
+  <a href="#-quickstart">Quickstart</a> ·
   <a href="#-schnellstart">Schnellstart</a> ·
   <a href="#-funktionen">Funktionen</a> ·
   <a href="#-interaktive-regler">Regler</a> ·
   <a href="#-analyse-modus--dashboard">Dashboard</a> ·
   <a href="#-projektstruktur">Struktur</a>
+</p>
+
+<br>
+
+## ⚡ Quickstart
+
+```bash
+cp .env.example .env        # dann OPENAI_API_KEY=sk-... eintragen
+docker compose up -d
+```
+
+<p align="center">
+  Öffnen: <b>http://localhost:3000</b>
 </p>
 
 <br>
@@ -47,23 +61,51 @@
 OPENAI_API_KEY=sk-...
 ```
 
-**2.** Alles starten (DB, Python-Sandbox und Next.js im Dev-Modus):
+**2.** Starten, je nach Zweck:
+
+<table>
+  <tr>
+    <th width="50%">Alles in Docker<br><sub>für Demo und andere Rechner</sub></th>
+    <th width="50%">Infrastruktur in Docker, Frontend lokal<br><sub>für die Entwicklung (schnelles Hot Reload)</sub></th>
+  </tr>
+  <tr>
+    <td valign="top">
 
 ```bash
-docker compose up
+docker compose up -d
 ```
 
-**3.** Öffnen: **http://localhost:3000**
-
-<details>
-<summary><b>Alternative:</b> Frontend lokal, Infrastruktur in Docker</summary>
-<br>
+</td>
+    <td valign="top">
 
 ```bash
 docker compose up -d db sandbox
 npm install
 npm run dev
 ```
+
+</td>
+  </tr>
+</table>
+
+Beim ersten Start wird das Sandbox-Image gebaut. Das dauert einige Minuten.
+
+**3.** Öffnen: **http://localhost:3000**
+
+Unter http://localhost:3000/api/health sollte `{"db":true,"sandbox":true,"openaiKey":true}` stehen.
+
+<details>
+<summary><b>Nützliche Befehle</b></summary>
+<br>
+
+```bash
+docker compose ps          # Status der Container
+docker compose logs -f web # Logs des Frontends (bzw. db, sandbox)
+docker compose down        # alles stoppen
+docker compose down -v     # stoppen und Daten löschen
+```
+
+Meldet das Frontend `ECONNREFUSED …:5432`, läuft die Datenbank nicht. Dann `docker compose up -d db sandbox` ausführen oder prüfen, ob Port 5432 durch ein lokales Postgres belegt ist (`lsof -i :5432`).
 
 </details>
 
@@ -127,7 +169,55 @@ Bei Datei-Analysen arbeitet das Modell einen sichtbaren **Plan mit Häkchen** ab
 |---|---|
 | Frontend & Backend | Next.js 16.3 (App Router), React 19.2, Tailwind CSS v4, AI SDK v7 + OpenAI (Responses API, Streaming) |
 | Datenbank | PostgreSQL 17 (Docker) für Chats, Nachrichten und Einstellungen |
-| Python-Sandbox | FastAPI + Jupyter-Kernel (Python 3.12) mit numpy, pandas, matplotlib, seaborn, scipy, scikit-learn, statsmodels, plotly, sympy, openpyxl … |
+| Python-Sandbox | FastAPI + Jupyter-Kernel (Python 3.12, Image `python:3.12-slim`), Pakete siehe [unten](#-python-sandbox-installierte-pakete) |
+
+### 🐍 Python-Sandbox: installierte Pakete
+
+Alle Pakete sind in [`sandbox/requirements.txt`](sandbox/requirements.txt) auf eine feste Version gepinnt. Aufgeführt sind die direkt installierten Pakete, ihre Abhängigkeiten installiert pip automatisch dazu.
+
+<table>
+  <tr>
+    <th width="62%">Im Python-Code nutzbar (18)</th>
+    <th width="38%">Sandbox-Dienst (5)</th>
+  </tr>
+  <tr>
+    <td valign="top">
+
+| Paket | Version | Zweck |
+|---|---|---|
+| `numpy` | `2.5.3` | Arrays, Numerik |
+| `pandas` | `3.0.6` | Tabellen, Datenanalyse |
+| `scipy` | `1.18.1` | Statistik, Optimierung |
+| `scikit-learn` | `1.9.1` | Machine Learning |
+| `statsmodels` | `0.15.0` | Regression, Zeitreihen |
+| `sympy` | `1.14.0` | symbolische Mathematik |
+| `matplotlib` | `3.11.2` | statische Diagramme |
+| `matplotlib-inline` | `0.2.2` | Plots im Kernel |
+| `seaborn` | `0.13.2` | statistische Diagramme |
+| `plotly` | `7.1.0` | interaktive Diagramme |
+| `nbformat` | `5.11.1` | Plotly-Ausgabe |
+| `openpyxl` | `3.1.5` | Excel lesen/schreiben (`.xlsx`) |
+| `xlrd` | `2.0.2` | alte Excel-Dateien (`.xls`) |
+| `pyarrow` | `25.0.1` | Parquet, Arrow |
+| `tabulate` | `0.10.0` | Text-/Markdown-Tabellen |
+| `jinja2` | `3.1.6` | pandas Styler (`df.style`) |
+| `pillow` | `12.3.0` | Bildverarbeitung |
+| `requests` | `2.34.2` | HTTP-Anfragen |
+
+</td>
+    <td valign="top">
+
+| Paket | Version |
+|---|---|
+| `fastapi` | `0.142.2` |
+| `uvicorn[standard]` | `0.54.0` |
+| `python-multipart` | `0.0.32` |
+| `jupyter_client` | `8.10.0` |
+| `ipykernel` | `7.4.0` |
+
+</td>
+  </tr>
+</table>
 
 ## 🗂️ Projektstruktur
 
