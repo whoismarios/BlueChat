@@ -1,7 +1,7 @@
 name: bluechat
 
-# Alles starten:            docker compose up
-# Nur Infrastruktur:        docker compose up db sandbox   (+ lokal: npm run dev)
+# Alles starten:            docker compose up -d
+# Nur Infrastruktur:        docker compose up -d db sandbox   (+ lokal: npm run dev)
 
 services:
   db:

@@ -7,7 +7,7 @@ ChatGPT-ähnliche Chat-App (Deutsch) mit Python-Code-Interpreter. UI-Texte, Prom
 ## Stack
 - Next.js 16 (App Router), React 19, Tailwind CSS v4, AI SDK + OpenAI (Responses API, Streaming)
 - PostgreSQL 17 (`db/init.sql`), Python-Sandbox: FastAPI + Jupyter-Kernel pro Chat (`sandbox/`)
-- Start: `docker compose up` (oder `docker compose up -d db sandbox` + `npm run dev`). Lint: `npm run lint`.
+- Start: `docker compose up -d` (oder `docker compose up -d db sandbox` + `npm run dev`). Lint: `npm run lint`.
 
 ## Struktur
 - `app/api/*` – Route-Handler (Chat-Stream, Unterhaltungen, Notebook-Export, Sandbox-Proxy, Transkription)
